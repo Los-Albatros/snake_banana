@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Banana Bread - Snake</title>
+    <title>Snake - Discord Activity</title>
     <style>
         * {
             margin: 0;
@@ -299,8 +299,10 @@
         let isPaused = false;
         let currentUser = null;
 
+        // Fonction pour initialiser le stockage persistant
         async function initStorage() {
             try {
+                // Vérifier si window.storage est disponible (Discord)
                 if (window.storage) {
                     return true;
                 }
@@ -311,16 +313,20 @@
             }
         }
 
+        // Initialiser l'utilisateur Discord
         async function initUser() {
             try {
+                // Vérifier si le SDK Discord est disponible
                 if (!window.DiscordSDK) {
                     console.log('SDK Discord non disponible - Mode test activé');
                     throw new Error('SDK non disponible');
                 }
 
+                // Initialiser le SDK Discord
                 const discordSdk = new window.DiscordSDK('1373200027291488386');
                 await discordSdk.ready();
                 
+                // Authentifier l'utilisateur
                 const { user } = await discordSdk.commands.authenticate({
                     access_token: true,
                 });
@@ -336,6 +342,7 @@
                 await loadLeaderboard();
             } catch (error) {
                 console.log('Mode test activé:', error.message);
+                // Fallback pour le développement hors Discord
                 currentUser = {
                     id: 'user_' + Math.random().toString(36).substr(2, 9),
                     username: 'Joueur' + Math.floor(Math.random() * 1000),
@@ -347,12 +354,14 @@
             }
         }
 
+        // Charger le meilleur score personnel
         async function loadPersonalBest() {
             try {
                 if (window.storage) {
                     const result = await window.storage.get(`score:${currentUser.id}`);
                     personalBest = result ? parseInt(result.value) : 0;
                 } else {
+                    // Fallback localStorage pour développement
                     personalBest = parseInt(localStorage.getItem(`snake_score_${currentUser.id}`)) || 0;
                 }
                 personalBestElement.textContent = personalBest;
@@ -362,6 +371,7 @@
             }
         }
 
+        // Sauvegarder le score
         async function saveScore(newScore) {
             if (newScore <= personalBest) return;
 
@@ -370,6 +380,7 @@
                     await window.storage.set(`score:${currentUser.id}`, newScore.toString(), true);
                     await window.storage.set(`user:${currentUser.id}`, currentUser.username, true);
                 } else {
+                    // Fallback localStorage
                     localStorage.setItem(`snake_score_${currentUser.id}`, newScore.toString());
                     localStorage.setItem(`snake_user_${currentUser.id}`, currentUser.username);
                 }
@@ -381,6 +392,7 @@
             }
         }
 
+        // Charger le leaderboard
         async function loadLeaderboard() {
             try {
                 let scores = [];
@@ -405,6 +417,7 @@
                         }
                     }
                 } else {
+                    // Fallback localStorage
                     for (let i = 0; i < localStorage.length; i++) {
                         const key = localStorage.key(i);
                         if (key.startsWith('snake_score_')) {
@@ -419,7 +432,10 @@
                     }
                 }
 
+                // Trier par score décroissant
                 scores.sort((a, b) => b.score - a.score);
+                
+                // Limiter à top 10
                 scores = scores.slice(0, 10);
 
                 displayLeaderboard(scores);
@@ -429,6 +445,7 @@
             }
         }
 
+        // Afficher le leaderboard
         function displayLeaderboard(scores) {
             if (scores.length === 0) {
                 leaderboardList.innerHTML = '<p style="text-align: center; opacity: 0.7;">Aucun score encore</p>';
@@ -458,13 +475,21 @@
         function drawGame() {
             if (isPaused) return;
 
+            // Ne pas bouger si pas de direction
+            if (velocity.x === 0 && velocity.y === 0) {
+                drawStatic();
+                return;
+            }
+
             const head = {x: snake[0].x + velocity.x, y: snake[0].y + velocity.y};
 
+            // Téléportation aux bords
             if (head.x < 0) head.x = tileCount - 1;
             if (head.x >= tileCount) head.x = 0;
             if (head.y < 0) head.y = tileCount - 1;
             if (head.y >= tileCount) head.y = 0;
 
+            // Vérifier les collisions avec soi-même
             for (let segment of snake) {
                 if (head.x === segment.x && head.y === segment.y) {
                     endGame();
@@ -474,6 +499,7 @@
 
             snake.unshift(head);
 
+            // Vérifier si le serpent mange la nourriture
             if (head.x === food.x && head.y === food.y) {
                 score++;
                 scoreElement.textContent = score;
@@ -482,9 +508,16 @@
                 snake.pop();
             }
 
+            drawStatic();
+        }
+
+        // Fonction pour dessiner le jeu en mode statique (sans mouvement)
+        function drawStatic() {
+            // Dessiner le fond
             ctx.fillStyle = '#1a1a2e';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+            // Dessiner la grille
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
             for (let i = 0; i < tileCount; i++) {
                 ctx.beginPath();
@@ -497,12 +530,14 @@
                 ctx.stroke();
             }
 
+            // Dessiner la nourriture
             ctx.fillStyle = '#ff6b6b';
             ctx.shadowBlur = 10;
             ctx.shadowColor = '#ff6b6b';
             ctx.fillRect(food.x * gridSize, food.y * gridSize, gridSize - 2, gridSize - 2);
             ctx.shadowBlur = 0;
 
+            // Dessiner le serpent
             snake.forEach((segment, index) => {
                 const gradient = ctx.createLinearGradient(
                     segment.x * gridSize, segment.y * gridSize,
@@ -555,13 +590,15 @@
 
         function restartGame() {
             snake = [{x: 10, y: 10}];
-            velocity = {x: 0, y: 0};
+            velocity = {x: 0, y: 0}; // Pas de mouvement au démarrage
             score = 0;
             scoreElement.textContent = score;
             isPaused = false;
             gameOverDiv.style.display = 'none';
             placeFood();
-            gameLoop = setInterval(drawGame, 100);
+            
+            // Redessiner immédiatement sans bouger
+            drawStatic();
         }
 
         document.addEventListener('keydown', (e) => {
@@ -597,6 +634,7 @@
             }
         });
 
+        // Attendre que le SDK Discord soit chargé
         function waitForDiscordSDK() {
             return new Promise((resolve) => {
                 if (window.DiscordSDK) {
@@ -609,6 +647,7 @@
                         }
                     }, 100);
                     
+                    // Timeout après 5 secondes
                     setTimeout(() => {
                         clearInterval(checkInterval);
                         resolve();
@@ -617,10 +656,13 @@
             });
         }
 
+        // Initialiser le jeu
         (async () => {
             await waitForDiscordSDK();
             await initStorage();
             await initUser();
+            placeFood();
+            drawStatic(); // Dessiner l'état initial
             gameLoop = setInterval(drawGame, 100);
         })();
     </script>
