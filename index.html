@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banana Bread - Snake</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            margin-bottom: 10px;
+        }
+
+        .discord-user {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 10px 20px;
+            border-radius: 10px;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+
+        .main-content {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .game-section {
+            flex: 1;
+            min-width: 300px;
+            max-width: 500px;
+        }
+
+        .game-wrapper {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .game-info {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+            font-size: 1.2em;
+        }
+
+        .score, .personal-best {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 10px 20px;
+            border-radius: 10px;
+        }
+
+        canvas {
+            border: 4px solid rgba(255, 255, 255, 0.5);
+            border-radius: 10px;
+            background: #1a1a2e;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            display: block;
+            margin: 0 auto;
+            max-width: 100%;
+        }
+
+        .controls {
+            margin-top: 20px;
+            font-size: 0.9em;
+            opacity: 0.8;
+            text-align: center;
+        }
+
+        .leaderboard-section {
+            flex: 0 0 350px;
+            min-width: 300px;
+        }
+
+        .leaderboard {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .leaderboard h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
+        .leaderboard-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: transform 0.2s;
+        }
+
+        .leaderboard-item:hover {
+            transform: translateX(5px);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .rank {
+            font-size: 1.5em;
+            font-weight: bold;
+            min-width: 40px;
+            text-align: center;
+        }
+
+        .rank-1 { color: #FFD700; }
+        .rank-2 { color: #C0C0C0; }
+        .rank-3 { color: #CD7F32; }
+
+        .player-info {
+            flex: 1;
+        }
+
+        .player-name {
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-bottom: 5px;
+        }
+
+        .player-score {
+            font-size: 1.3em;
+            color: #4ecdc4;
+            font-weight: bold;
+        }
+
+        .current-player {
+            border: 2px solid #4ecdc4;
+            box-shadow: 0 0 20px rgba(78, 205, 196, 0.3);
+        }
+
+        .game-over {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .game-over-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 400px;
+        }
+
+        .game-over h2 {
+            font-size: 2em;
+            margin-bottom: 20px;
+            color: #ff6b6b;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2em;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: transform 0.2s;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.2em;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .leaderboard-section {
+                order: 2;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🐍 Snake Game</h1>
+            <div class="discord-user" id="userInfo">
+                <div class="loading">Connexion à Discord...</div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="game-section">
+                <div class="game-wrapper">
+                    <div class="game-info">
+                        <div class="score">Score: <span id="score">0</span></div>
+                        <div class="personal-best">Meilleur: <span id="personalBest">0</span></div>
+                    </div>
+                    <canvas id="gameCanvas" width="400" height="400"></canvas>
+                    <div class="controls">
+                        ⬆️⬇️⬅️➡️ Utilise les flèches pour jouer | ESPACE pour pause
+                    </div>
+                </div>
+            </div>
+
+            <div class="leaderboard-section">
+                <div class="leaderboard">
+                    <h2>🏆 Classement</h2>
+                    <div id="leaderboardList">
+                        <div class="loading">Chargement...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="game-over" id="gameOver">
+        <div class="game-over-content">
+            <h2>Game Over!</h2>
+            <p style="font-size: 1.5em; margin: 20px 0;">Score: <span id="finalScore">0</span></p>
+            <p id="newRecordMsg" style="font-size: 1.2em; color: #FFD700; display: none; margin-bottom: 10px;">
+                🎉 Nouveau record personnel !
+            </p>
+            <button class="btn" onclick="restartGame()">Rejouer</button>
+        </div>
+    </div>
+
+    <!-- Discord Embedded SDK -->
+    <script src="https://discord.com/api/v10/embedded-sdk.js"></script>
+    
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+        const personalBestElement = document.getElementById('personalBest');
+        const gameOverDiv = document.getElementById('gameOver');
+        const finalScoreElement = document.getElementById('finalScore');
+        const newRecordMsg = document.getElementById('newRecordMsg');
+        const userInfoDiv = document.getElementById('userInfo');
+        const leaderboardList = document.getElementById('leaderboardList');
+
+        const gridSize = 20;
+        const tileCount = canvas.width / gridSize;
+
+        let snake = [{x: 10, y: 10}];
+        let velocity = {x: 0, y: 0};
+        let food = {x: 15, y: 15};
+        let score = 0;
+        let personalBest = 0;
+        let gameLoop;
+        let isPaused = false;
+        let currentUser = null;
+
+        async function initStorage() {
+            try {
+                if (window.storage) {
+                    return true;
+                }
+                return false;
+            } catch (error) {
+                console.error('Storage non disponible:', error);
+                return false;
+            }
+        }
+
+        async function initUser() {
+            try {
+                if (!window.DiscordSDK) {
+                    console.log('SDK Discord non disponible - Mode test activé');
+                    throw new Error('SDK non disponible');
+                }
+
+                const discordSdk = new window.DiscordSDK('1373200027291488386');
+                await discordSdk.ready();
+                
+                const { user } = await discordSdk.commands.authenticate({
+                    access_token: true,
+                });
+
+                currentUser = {
+                    id: user.id,
+                    username: user.username,
+                    avatar: user.avatar
+                };
+
+                userInfoDiv.innerHTML = `👤 ${currentUser.username}`;
+                await loadPersonalBest();
+                await loadLeaderboard();
+            } catch (error) {
+                console.log('Mode test activé:', error.message);
+                currentUser = {
+                    id: 'user_' + Math.random().toString(36).substr(2, 9),
+                    username: 'Joueur' + Math.floor(Math.random() * 1000),
+                    avatar: null
+                };
+                userInfoDiv.innerHTML = `👤 ${currentUser.username} <span style="opacity: 0.6">(Mode test)</span>`;
+                await loadPersonalBest();
+                await loadLeaderboard();
+            }
+        }
+
+        async function loadPersonalBest() {
+            try {
+                if (window.storage) {
+                    const result = await window.storage.get(`score:${currentUser.id}`);
+                    personalBest = result ? parseInt(result.value) : 0;
+                } else {
+                    personalBest = parseInt(localStorage.getItem(`snake_score_${currentUser.id}`)) || 0;
+                }
+                personalBestElement.textContent = personalBest;
+            } catch (error) {
+                console.log('Pas de score précédent');
+                personalBest = 0;
+            }
+        }
+
+        async function saveScore(newScore) {
+            if (newScore <= personalBest) return;
+
+            try {
+                if (window.storage) {
+                    await window.storage.set(`score:${currentUser.id}`, newScore.toString(), true);
+                    await window.storage.set(`user:${currentUser.id}`, currentUser.username, true);
+                } else {
+                    localStorage.setItem(`snake_score_${currentUser.id}`, newScore.toString());
+                    localStorage.setItem(`snake_user_${currentUser.id}`, currentUser.username);
+                }
+                personalBest = newScore;
+                personalBestElement.textContent = personalBest;
+                await loadLeaderboard();
+            } catch (error) {
+                console.error('Erreur sauvegarde score:', error);
+            }
+        }
+
+        async function loadLeaderboard() {
+            try {
+                let scores = [];
+
+                if (window.storage) {
+                    const result = await window.storage.list('score:', true);
+                    if (result && result.keys) {
+                        for (let key of result.keys) {
+                            try {
+                                const scoreResult = await window.storage.get(key, true);
+                                const userId = key.replace('score:', '');
+                                const userResult = await window.storage.get(`user:${userId}`, true);
+                                
+                                scores.push({
+                                    userId: userId,
+                                    username: userResult ? userResult.value : 'Joueur',
+                                    score: parseInt(scoreResult.value)
+                                });
+                            } catch (e) {
+                                console.log('Erreur lecture score:', e);
+                            }
+                        }
+                    }
+                } else {
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const key = localStorage.key(i);
+                        if (key.startsWith('snake_score_')) {
+                            const userId = key.replace('snake_score_', '');
+                            const username = localStorage.getItem(`snake_user_${userId}`) || 'Joueur';
+                            scores.push({
+                                userId: userId,
+                                username: username,
+                                score: parseInt(localStorage.getItem(key))
+                            });
+                        }
+                    }
+                }
+
+                scores.sort((a, b) => b.score - a.score);
+                scores = scores.slice(0, 10);
+
+                displayLeaderboard(scores);
+            } catch (error) {
+                console.error('Erreur chargement leaderboard:', error);
+                leaderboardList.innerHTML = '<p style="text-align: center; opacity: 0.7;">Erreur de chargement</p>';
+            }
+        }
+
+        function displayLeaderboard(scores) {
+            if (scores.length === 0) {
+                leaderboardList.innerHTML = '<p style="text-align: center; opacity: 0.7;">Aucun score encore</p>';
+                return;
+            }
+
+            let html = '';
+            scores.forEach((player, index) => {
+                const rank = index + 1;
+                const isCurrentUser = player.userId === currentUser.id;
+                const rankClass = rank <= 3 ? `rank-${rank}` : '';
+                
+                html += `
+                    <div class="leaderboard-item ${isCurrentUser ? 'current-player' : ''}">
+                        <div class="rank ${rankClass}">#${rank}</div>
+                        <div class="player-info">
+                            <div class="player-name">${player.username} ${isCurrentUser ? '(Vous)' : ''}</div>
+                            <div class="player-score">${player.score} pts</div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            leaderboardList.innerHTML = html;
+        }
+
+        function drawGame() {
+            if (isPaused) return;
+
+            const head = {x: snake[0].x + velocity.x, y: snake[0].y + velocity.y};
+
+            if (head.x < 0) head.x = tileCount - 1;
+            if (head.x >= tileCount) head.x = 0;
+            if (head.y < 0) head.y = tileCount - 1;
+            if (head.y >= tileCount) head.y = 0;
+
+            for (let segment of snake) {
+                if (head.x === segment.x && head.y === segment.y) {
+                    endGame();
+                    return;
+                }
+            }
+
+            snake.unshift(head);
+
+            if (head.x === food.x && head.y === food.y) {
+                score++;
+                scoreElement.textContent = score;
+                placeFood();
+            } else {
+                snake.pop();
+            }
+
+            ctx.fillStyle = '#1a1a2e';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+            for (let i = 0; i < tileCount; i++) {
+                ctx.beginPath();
+                ctx.moveTo(i * gridSize, 0);
+                ctx.lineTo(i * gridSize, canvas.height);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(0, i * gridSize);
+                ctx.lineTo(canvas.width, i * gridSize);
+                ctx.stroke();
+            }
+
+            ctx.fillStyle = '#ff6b6b';
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = '#ff6b6b';
+            ctx.fillRect(food.x * gridSize, food.y * gridSize, gridSize - 2, gridSize - 2);
+            ctx.shadowBlur = 0;
+
+            snake.forEach((segment, index) => {
+                const gradient = ctx.createLinearGradient(
+                    segment.x * gridSize, segment.y * gridSize,
+                    (segment.x + 1) * gridSize, (segment.y + 1) * gridSize
+                );
+                
+                if (index === 0) {
+                    gradient.addColorStop(0, '#4ecdc4');
+                    gradient.addColorStop(1, '#44a08d');
+                } else {
+                    gradient.addColorStop(0, '#667eea');
+                    gradient.addColorStop(1, '#764ba2');
+                }
+
+                ctx.fillStyle = gradient;
+                ctx.fillRect(
+                    segment.x * gridSize + 1,
+                    segment.y * gridSize + 1,
+                    gridSize - 2,
+                    gridSize - 2
+                );
+            });
+        }
+
+        function placeFood() {
+            food.x = Math.floor(Math.random() * tileCount);
+            food.y = Math.floor(Math.random() * tileCount);
+
+            for (let segment of snake) {
+                if (food.x === segment.x && food.y === segment.y) {
+                    placeFood();
+                    return;
+                }
+            }
+        }
+
+        async function endGame() {
+            clearInterval(gameLoop);
+            finalScoreElement.textContent = score;
+            
+            if (score > personalBest) {
+                newRecordMsg.style.display = 'block';
+                await saveScore(score);
+            } else {
+                newRecordMsg.style.display = 'none';
+            }
+
+            gameOverDiv.style.display = 'flex';
+        }
+
+        function restartGame() {
+            snake = [{x: 10, y: 10}];
+            velocity = {x: 0, y: 0};
+            score = 0;
+            scoreElement.textContent = score;
+            isPaused = false;
+            gameOverDiv.style.display = 'none';
+            placeFood();
+            gameLoop = setInterval(drawGame, 100);
+        }
+
+        document.addEventListener('keydown', (e) => {
+            switch(e.key) {
+                case 'ArrowUp':
+                    if (velocity.y === 0) {
+                        velocity = {x: 0, y: -1};
+                    }
+                    e.preventDefault();
+                    break;
+                case 'ArrowDown':
+                    if (velocity.y === 0) {
+                        velocity = {x: 0, y: 1};
+                    }
+                    e.preventDefault();
+                    break;
+                case 'ArrowLeft':
+                    if (velocity.x === 0) {
+                        velocity = {x: -1, y: 0};
+                    }
+                    e.preventDefault();
+                    break;
+                case 'ArrowRight':
+                    if (velocity.x === 0) {
+                        velocity = {x: 1, y: 0};
+                    }
+                    e.preventDefault();
+                    break;
+                case ' ':
+                    isPaused = !isPaused;
+                    e.preventDefault();
+                    break;
+            }
+        });
+
+        function waitForDiscordSDK() {
+            return new Promise((resolve) => {
+                if (window.DiscordSDK) {
+                    resolve();
+                } else {
+                    const checkInterval = setInterval(() => {
+                        if (window.DiscordSDK) {
+                            clearInterval(checkInterval);
+                            resolve();
+                        }
+                    }, 100);
+                    
+                    setTimeout(() => {
+                        clearInterval(checkInterval);
+                        resolve();
+                    }, 5000);
+                }
+            });
+        }
+
+        (async () => {
+            await waitForDiscordSDK();
+            await initStorage();
+            await initUser();
+            gameLoop = setInterval(drawGame, 100);
+        })();
+    </script>
+</body>
+</html>
