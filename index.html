@@ -159,7 +159,6 @@
             font-weight: bold;
         }
 
-
         .current-player {
             border: 2px solid #4ecdc4;
             box-shadow: 0 0 20px rgba(78, 205, 196, 0.3);
@@ -384,7 +383,6 @@
                     // Fallback localStorage
                     localStorage.setItem(`snake_score_${currentUser.id}`, newScore.toString());
                     localStorage.setItem(`snake_user_${currentUser.id}`, currentUser.username);
-
                 }
                 personalBest = newScore;
                 personalBestElement.textContent = personalBest;
