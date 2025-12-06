@@ -159,6 +159,7 @@
             font-weight: bold;
         }
 
+
         .current-player {
             border: 2px solid #4ecdc4;
             box-shadow: 0 0 20px rgba(78, 205, 196, 0.3);
@@ -348,21 +349,39 @@
                 log('Ready...', '⏳');
                 await discordSdk.ready();
                 
-                log('Auth...', '⏳');
-                const auth = await discordSdk.commands.authenticate({
-                    access_token: true,
-                });
-
-                log(`Auth OK: ${auth.user.username}`, '✅');
-
-                currentUser = {
-                    id: auth.user.id,
-                    username: auth.user.username,
-                    avatar: auth.user.avatar
-                };
+                log('Get instance...', '⏳');
+                // Récupérer les infos de l'instance (channel, guild, participants)
+                const instanceId = discordSdk.instanceId;
+                const channelId = discordSdk.channelId;
+                const guildId = discordSdk.guildId;
+                
+                log('Get participants...', '⏳');
+                // Récupérer les participants de l'activité
+                const participants = await discordSdk.commands.getInstanceConnectedParticipants();
+                
+                log(`${participants.participants.length} participants`, '✅');
+                
+                // Utiliser le premier participant comme utilisateur courant
+                // Note: dans une vraie app, on ferait l'auth OAuth complète
+                if (participants.participants.length > 0) {
+                    const participant = participants.participants[0];
+                    currentUser = {
+                        id: participant.id,
+                        username: participant.username || `User${participant.id.slice(0, 4)}`,
+                        avatar: participant.avatar
+                    };
+                    log(`Utilisateur: ${currentUser.username}`, '✅');
+                } else {
+                    // Fallback si aucun participant
+                    currentUser = {
+                        id: instanceId || 'instance_' + Date.now(),
+                        username: 'Joueur',
+                        avatar: null
+                    };
+                    log('Aucun participant, fallback', '⚠️');
+                }
 
                 userInfoDiv.innerHTML = `👤 ${currentUser.username}`;
-                debugLog.style.display = 'none'; // Cacher les logs si succès
                 await loadPersonalBest();
                 await loadLeaderboard();
             } catch (error) {
