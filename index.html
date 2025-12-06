@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -159,7 +159,6 @@
             font-weight: bold;
         }
 
-
         .current-player {
             border: 2px solid #4ecdc4;
             box-shadow: 0 0 20px rgba(78, 205, 196, 0.3);
@@ -234,7 +233,7 @@
         <div class="header">
             <h1>🐍 Snake Game</h1>
             <div class="discord-user" id="userInfo">
-                <div class="loading">Connexion à Discord...</div>
+                <div class="loading">Connecting to Discord...</div>
             </div>
             <div id="debugLog" style="background: rgba(0,0,0,0.5); padding: 10px; border-radius: 5px; font-size: 0.8em; max-height: 150px; overflow-y: auto; margin-top: 10px; display: inline-block; max-width: 600px;"></div>
         </div>
@@ -244,20 +243,20 @@
                 <div class="game-wrapper">
                     <div class="game-info">
                         <div class="score">Score: <span id="score">0</span></div>
-                        <div class="personal-best">Meilleur: <span id="personalBest">0</span></div>
+                        <div class="personal-best">Best: <span id="personalBest">0</span></div>
                     </div>
                     <canvas id="gameCanvas" width="400" height="400"></canvas>
                     <div class="controls">
-                        ⬆️⬇️⬅️➡️ Utilise les flèches pour jouer | ESPACE pour pause
+                        ⬆️⬇️⬅️➡️ Use arrow keys to play | SPACE to pause
                     </div>
                 </div>
             </div>
 
             <div class="leaderboard-section">
                 <div class="leaderboard">
-                    <h2>🏆 Classement</h2>
+                    <h2>🏆 Leaderboard</h2>
                     <div id="leaderboardList">
-                        <div class="loading">Chargement...</div>
+                        <div class="loading">Loading...</div>
                     </div>
                 </div>
             </div>
@@ -269,25 +268,26 @@
             <h2>Game Over!</h2>
             <p style="font-size: 1.5em; margin: 20px 0;">Score: <span id="finalScore">0</span></p>
             <p id="newRecordMsg" style="font-size: 1.2em; color: #FFD700; display: none; margin-bottom: 10px;">
-                🎉 Nouveau record personnel !
+                🎉 New personal best!
             </p>
-            <button class="btn" onclick="restartGame()">Rejouer</button>
+            <button class="btn" id="restartBtn">Play Again</button>
         </div>
     </div>
 
-    <!-- Discord Embedded SDK depuis unpkg CDN -->
+    <!-- Discord Embedded SDK from unpkg CDN -->
     <script type="module">
-        // Importer le SDK Discord
+        // Import Discord SDK
         import { DiscordSDK } from 'https://unpkg.com/@discord/embedded-app-sdk@2.4.0/output/index.mjs';
         
-        // Exposer DiscordSDK globalement
+        // Expose DiscordSDK globally
         window.DiscordSDK = DiscordSDK;
         
-        // Déclencher un événement quand le SDK est prêt
+        // Trigger event when SDK is ready
         window.dispatchEvent(new Event('discord-sdk-loaded'));
     </script>
     
     <script>
+        // Game elements and DOM references
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const scoreElement = document.getElementById('score');
@@ -298,20 +298,29 @@
         const userInfoDiv = document.getElementById('userInfo');
         const leaderboardList = document.getElementById('leaderboardList');
         const debugLog = document.getElementById('debugLog');
+        const restartBtn = document.getElementById('restartBtn');
 
+        // Game constants
         const gridSize = 20;
         const tileCount = canvas.width / gridSize;
 
-        let snake = [{x: 10, y: 10}];
-        let velocity = {x: 0, y: 0};
-        let food = {x: 15, y: 15};
+        // Game state
+        let snake = [{ x: 10, y: 10 }];
+        let velocity = { x: 0, y: 0 };
+        let food = { x: 15, y: 15 };
         let score = 0;
         let personalBest = 0;
         let gameLoop;
         let isPaused = false;
         let currentUser = null;
+        let discordSdk = null;
 
-        // Fonction pour logger dans l'interface
+        // Helper to get safe storage reference (Discord storage or localStorage fallback)
+        function getStorage() {
+            return window.storage || null;
+        }
+
+        // Log messages to on-screen debug panel
         function log(message, emoji = '📝') {
             console.log(message);
             const logEntry = document.createElement('div');
@@ -321,219 +330,233 @@
             debugLog.scrollTop = debugLog.scrollHeight;
         }
 
-        // Fonction pour initialiser le stockage persistant
+        // Initialize persistent storage check
         async function initStorage() {
             try {
-                // Vérifier si window.storage est disponible (Discord)
-                if (window.storage) {
+                const storage = getStorage();
+                if (storage) {
+                    log('Discord persistent storage available', '💾');
                     return true;
                 }
+                log('Using localStorage fallback (test mode)', '💾');
                 return false;
             } catch (error) {
-                console.error('Storage non disponible:', error);
+                console.error('Storage check failed:', error);
                 return false;
             }
         }
 
-        // Initialiser l'utilisateur Discord
+        // Initialize Discord user and SDK
         async function initUser() {
             try {
                 if (!window.DiscordSDK) {
-                    log('SDK non disponible', '❌');
-                    throw new Error('SDK non disponible');
+                    log('Discord SDK not available', '❌');
+                    createFallbackUser();
+                    return;
                 }
 
-                log('Init SDK...', '⏳');
-                const discordSdk = new window.DiscordSDK('1373200027291488386');
-                
-                log('Ready...', '⏳');
+                log('Initializing Discord SDK...', '⏳');
+                discordSdk = new window.DiscordSDK('1373200027291488386');
                 await discordSdk.ready();
+                log('Discord SDK ready', '✅');
+
+                // TODO: Add proper OAuth authentication before these calls
+                // const auth = await discordSdk.commands.authenticate({...});
                 
-                log('Get instance...', '⏳');
-                // Récupérer les infos de l'instance (channel, guild, participants)
+                log('Fetching instance info...', '⏳');
                 const instanceId = discordSdk.instanceId;
                 const channelId = discordSdk.channelId;
                 const guildId = discordSdk.guildId;
-                
-                log('Get participants...', '⏳');
-                // Récupérer les participants de l'activité
-                const participants = await discordSdk.commands.getInstanceConnectedParticipants();
-                
-                log(`${participants.participants.length} participants`, '✅');
-                
-                // Utiliser le premier participant comme utilisateur courant
-                // Note: dans une vraie app, on ferait l'auth OAuth complète
-                if (participants.participants.length > 0) {
-                    const participant = participants.participants[0];
-                    currentUser = {
-                        id: participant.id,
-                        username: participant.username || `User${participant.id.slice(0, 4)}`,
-                        avatar: participant.avatar
-                    };
-                    log(`Utilisateur: ${currentUser.username}`, '✅');
-                } else {
-                    // Fallback si aucun participant
-                    currentUser = {
-                        id: instanceId || 'instance_' + Date.now(),
-                        username: 'Joueur',
-                        avatar: null
-                    };
-                    log('Aucun participant, fallback', '⚠️');
+                log(`Instance: ${instanceId?.slice(-8)} | Channel: ${channelId} | Guild: ${guildId}`, '🔍');
+
+                // Try to get participants (will fail without auth - fallback handles this)
+                try {
+                    const participants = await discordSdk.commands.GetEmbeddedInstanceConnectedParticipants({});
+                    if (participants.participants?.length > 0) {
+                        const participant = participants.participants[0];
+                        currentUser = {
+                            id: participant.id,
+                            username: participant.username || `User${participant.id.slice(-4)}`,
+                            avatar: participant.avatar
+                        };
+                        log(`User: ${currentUser.username}`, '✅');
+                    } else {
+                        createFallbackUser();
+                    }
+                } catch (authError) {
+                    log(`Auth error (normal without OAuth): ${authError.message}`, '⚠️');
+                    createFallbackUser();
                 }
 
-                userInfoDiv.innerHTML = `👤 ${currentUser.username}`;
-                await loadPersonalBest();
-                await loadLeaderboard();
             } catch (error) {
-                log(`Erreur: ${error.message}`, '❌');
-                
+                log(`SDK init failed: ${error.message}`, '❌');
+                createFallbackUser();
+            }
+
+            function createFallbackUser() {
                 currentUser = {
                     id: 'user_' + Math.random().toString(36).substr(2, 9),
-                    username: 'Joueur' + Math.floor(Math.random() * 1000),
+                    username: `Player${Math.floor(Math.random() * 1000)}`,
                     avatar: null
                 };
-                userInfoDiv.innerHTML = `👤 ${currentUser.username} <span style="opacity: 0.6; font-size: 0.8em;">(Mode test)</span>`;
-                await loadPersonalBest();
-                await loadLeaderboard();
+                log(`Using fallback user: ${currentUser.username}`, '👤');
+            }
+
+            // Update UI once user is set
+            if (currentUser) {
+                userInfoDiv.innerHTML = `👤 ${currentUser.username}`;
+                loadPersonalBest();
+                loadLeaderboard();
             }
         }
 
-        // Charger le meilleur score personnel
+        // Load personal best score from storage
         async function loadPersonalBest() {
             try {
-                if (window.storage) {
-                    const result = await window.storage.get(`score:${currentUser.id}`);
-                    personalBest = result ? parseInt(result.value) : 0;
+                const storage = getStorage();
+                let storedScore = 0;
+
+                if (storage) {
+                    const result = await storage.get(`score:${currentUser.id}`);
+                    storedScore = result ? parseInt(result.value) || 0 : 0;
                 } else {
-                    // Fallback localStorage pour développement
-                    personalBest = parseInt(localStorage.getItem(`snake_score_${currentUser.id}`)) || 0;
+                    storedScore = parseInt(localStorage.getItem(`snake_score_${currentUser.id}`)) || 0;
                 }
+
+                personalBest = storedScore;
                 personalBestElement.textContent = personalBest;
             } catch (error) {
-                console.log('Pas de score précédent');
                 personalBest = 0;
+                personalBestElement.textContent = personalBest;
             }
         }
 
-        // Sauvegarder le score
+        // Save new personal best score
         async function saveScore(newScore) {
             if (newScore <= personalBest) return;
 
             try {
-                if (window.storage) {
-                    await window.storage.set(`score:${currentUser.id}`, newScore.toString(), true);
-                    await window.storage.set(`user:${currentUser.id}`, currentUser.username, true);
+                const storage = getStorage();
+                if (storage) {
+                    await storage.set(`score:${currentUser.id}`, newScore.toString(), true);
+                    await storage.set(`user:${currentUser.id}`, currentUser.username, true);
                 } else {
-                    // Fallback localStorage
                     localStorage.setItem(`snake_score_${currentUser.id}`, newScore.toString());
                     localStorage.setItem(`snake_user_${currentUser.id}`, currentUser.username);
                 }
+                
                 personalBest = newScore;
                 personalBestElement.textContent = personalBest;
-                await loadLeaderboard();
+                loadLeaderboard(); // Refresh leaderboard
+                log(`New personal best: ${newScore}`, '🏆');
             } catch (error) {
-                console.error('Erreur sauvegarde score:', error);
+                console.error('Score save failed:', error);
             }
         }
 
-        // Charger le leaderboard
+        // Load leaderboard from storage
         async function loadLeaderboard() {
             try {
+                const storage = getStorage();
                 let scores = [];
 
-                if (window.storage) {
-                    const result = await window.storage.list('score:', true);
-                    if (result && result.keys) {
+                if (storage) {
+                    const result = await storage.list('score:');
+                    if (result?.keys) {
                         for (let key of result.keys) {
                             try {
-                                const scoreResult = await window.storage.get(key, true);
+                                const scoreResult = await storage.get(key);
                                 const userId = key.replace('score:', '');
-                                const userResult = await window.storage.get(`user:${userId}`, true);
+                                const userResult = await storage.get(`user:${userId}`);
                                 
                                 scores.push({
-                                    userId: userId,
-                                    username: userResult ? userResult.value : 'Joueur',
-                                    score: parseInt(scoreResult.value)
+                                    userId,
+                                    username: userResult?.value || 'Player',
+                                    score: parseInt(scoreResult?.value) || 0
                                 });
                             } catch (e) {
-                                console.log('Erreur lecture score:', e);
+                                // Skip invalid entries
                             }
                         }
                     }
                 } else {
-                    // Fallback localStorage
+                    // localStorage fallback
                     for (let i = 0; i < localStorage.length; i++) {
                         const key = localStorage.key(i);
-                        if (key.startsWith('snake_score_')) {
+                        if (key?.startsWith('snake_score_')) {
                             const userId = key.replace('snake_score_', '');
-                            const username = localStorage.getItem(`snake_user_${userId}`) || 'Joueur';
+                            const username = localStorage.getItem(`snake_user_${userId}`) || 'Player';
                             scores.push({
-                                userId: userId,
-                                username: username,
-                                score: parseInt(localStorage.getItem(key))
+                                userId,
+                                username,
+                                score: parseInt(localStorage.getItem(key)) || 0
                             });
                         }
                     }
                 }
 
-                // Trier par score décroissant
+                // Sort by score descending, limit to top 10
                 scores.sort((a, b) => b.score - a.score);
-                
-                // Limiter à top 10
                 scores = scores.slice(0, 10);
-
                 displayLeaderboard(scores);
             } catch (error) {
-                console.error('Erreur chargement leaderboard:', error);
-                leaderboardList.innerHTML = '<p style="text-align: center; opacity: 0.7;">Erreur de chargement</p>';
+                console.error('Leaderboard load failed:', error);
+                leaderboardList.innerHTML = '<p style="text-align: center; opacity: 0.7;">Loading failed</p>';
             }
         }
 
-        // Afficher le leaderboard
+        // Display leaderboard in UI
         function displayLeaderboard(scores) {
             if (scores.length === 0) {
-                leaderboardList.innerHTML = '<p style="text-align: center; opacity: 0.7;">Aucun score encore</p>';
+                leaderboardList.innerHTML = '<p style="text-align: center; opacity: 0.7;">No scores yet</p>';
                 return;
             }
 
             let html = '';
             scores.forEach((player, index) => {
                 const rank = index + 1;
-                const isCurrentUser = player.userId === currentUser.id;
+                const isCurrentUser = player.userId === currentUser?.id;
                 const rankClass = rank <= 3 ? `rank-${rank}` : '';
                 
                 html += `
                     <div class="leaderboard-item ${isCurrentUser ? 'current-player' : ''}">
                         <div class="rank ${rankClass}">#${rank}</div>
                         <div class="player-info">
-                            <div class="player-name">${player.username} ${isCurrentUser ? '(Vous)' : ''}</div>
+                            <div class="player-name">${player.username} ${isCurrentUser ? '(You)' : ''}</div>
                             <div class="player-score">${player.score} pts</div>
                         </div>
                     </div>
                 `;
             });
-
             leaderboardList.innerHTML = html;
         }
 
+        // Main game update loop
         function drawGame() {
-            if (isPaused) return;
+            if (isPaused) {
+                drawStatic();
+                return;
+            }
 
-            // Ne pas bouger si pas de direction
+            // Skip if no movement direction set
             if (velocity.x === 0 && velocity.y === 0) {
                 drawStatic();
                 return;
             }
 
-            const head = {x: snake[0].x + velocity.x, y: snake[0].y + velocity.y};
+            // Calculate new head position
+            const head = { 
+                x: snake[0].x + velocity.x, 
+                y: snake[0].y + velocity.y 
+            };
 
-            // Téléportation aux bords
+            // Wrap around screen edges
             if (head.x < 0) head.x = tileCount - 1;
             if (head.x >= tileCount) head.x = 0;
             if (head.y < 0) head.y = tileCount - 1;
             if (head.y >= tileCount) head.y = 0;
 
-            // Vérifier les collisions avec soi-même
+            // Check self-collision
             for (let segment of snake) {
                 if (head.x === segment.x && head.y === segment.y) {
                     endGame();
@@ -541,9 +564,10 @@
                 }
             }
 
+            // Update snake position
             snake.unshift(head);
 
-            // Vérifier si le serpent mange la nourriture
+            // Check food collision
             if (head.x === food.x && head.y === food.y) {
                 score++;
                 scoreElement.textContent = score;
@@ -555,33 +579,37 @@
             drawStatic();
         }
 
-        // Fonction pour dessiner le jeu en mode statique (sans mouvement)
+        // Draw static game elements (background, grid, food, snake)
         function drawStatic() {
-            // Dessiner le fond
+            // Clear canvas with dark background
             ctx.fillStyle = '#1a1a2e';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Dessiner la grille
+            // Draw grid lines
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.lineWidth = 1;
             for (let i = 0; i < tileCount; i++) {
+                // Vertical lines
                 ctx.beginPath();
                 ctx.moveTo(i * gridSize, 0);
                 ctx.lineTo(i * gridSize, canvas.height);
                 ctx.stroke();
+                
+                // Horizontal lines
                 ctx.beginPath();
                 ctx.moveTo(0, i * gridSize);
                 ctx.lineTo(canvas.width, i * gridSize);
                 ctx.stroke();
             }
 
-            // Dessiner la nourriture
-            ctx.fillStyle = '#ff6b6b';
+            // Draw food with glow effect
             ctx.shadowBlur = 10;
             ctx.shadowColor = '#ff6b6b';
+            ctx.fillStyle = '#ff6b6b';
             ctx.fillRect(food.x * gridSize, food.y * gridSize, gridSize - 2, gridSize - 2);
             ctx.shadowBlur = 0;
 
-            // Dessiner le serpent
+            // Draw snake segments with gradient
             snake.forEach((segment, index) => {
                 const gradient = ctx.createLinearGradient(
                     segment.x * gridSize, segment.y * gridSize,
@@ -589,9 +617,11 @@
                 );
                 
                 if (index === 0) {
+                    // Head: teal gradient
                     gradient.addColorStop(0, '#4ecdc4');
                     gradient.addColorStop(1, '#44a08d');
                 } else {
+                    // Body: purple gradient
                     gradient.addColorStop(0, '#667eea');
                     gradient.addColorStop(1, '#764ba2');
                 }
@@ -606,10 +636,12 @@
             });
         }
 
+        // Place food at random safe position
         function placeFood() {
             food.x = Math.floor(Math.random() * tileCount);
             food.y = Math.floor(Math.random() * tileCount);
 
+            // Ensure food doesn't spawn on snake
             for (let segment of snake) {
                 if (food.x === segment.x && food.y === segment.y) {
                     placeFood();
@@ -618,8 +650,13 @@
             }
         }
 
+        // End game and show game over screen
         async function endGame() {
-            clearInterval(gameLoop);
+            if (gameLoop) {
+                clearInterval(gameLoop);
+                gameLoop = null;
+            }
+
             finalScoreElement.textContent = score;
             
             if (score > personalBest) {
@@ -632,114 +669,126 @@
             gameOverDiv.style.display = 'flex';
         }
 
+        // Properly restart the game with clean state
         function restartGame() {
-            // Arrêter l'ancien loop s'il existe
+            // Stop existing game loop
             if (gameLoop) {
                 clearInterval(gameLoop);
+                gameLoop = null;
             }
             
-            snake = [{x: 10, y: 10}];
-            velocity = {x: 0, y: 0}; // Pas de mouvement au démarrage
+            // Reset all game state
+            snake = [{ x: 10, y: 10 }];
+            velocity = { x: 0, y: 0 };
             score = 0;
-            scoreElement.textContent = score;
             isPaused = false;
-            gameOverDiv.style.display = 'none';
-            placeFood();
             
-            // Redessiner immédiatement sans bouger
+            // Update UI
+            scoreElement.textContent = score;
+            gameOverDiv.style.display = 'none';
+            
+            // Place initial food and draw
+            placeFood();
             drawStatic();
             
-            // Relancer le game loop
+            // Start new game loop
             gameLoop = setInterval(drawGame, 100);
+            log('Game restarted', '🔄');
         }
 
+        // Keyboard input handling
         document.addEventListener('keydown', (e) => {
             switch(e.key) {
                 case 'ArrowUp':
-                    if (velocity.y === 0) {
-                        velocity = {x: 0, y: -1};
-                    }
+                    if (velocity.y === 0) velocity = { x: 0, y: -1 };
                     e.preventDefault();
                     break;
                 case 'ArrowDown':
-                    if (velocity.y === 0) {
-                        velocity = {x: 0, y: 1};
-                    }
+                    if (velocity.y === 0) velocity = { x: 0, y: 1 };
                     e.preventDefault();
                     break;
                 case 'ArrowLeft':
-                    if (velocity.x === 0) {
-                        velocity = {x: -1, y: 0};
-                    }
+                    if (velocity.x === 0) velocity = { x: -1, y: 0 };
                     e.preventDefault();
                     break;
                 case 'ArrowRight':
-                    if (velocity.x === 0) {
-                        velocity = {x: 1, y: 0};
-                    }
+                    if (velocity.x === 0) velocity = { x: 1, y: 0 };
                     e.preventDefault();
                     break;
                 case ' ':
                     isPaused = !isPaused;
+                    log(`Game ${isPaused ? 'paused' : 'resumed'}`, isPaused ? '⏸️' : '▶️');
                     e.preventDefault();
                     break;
             }
         });
 
-        // Attendre que le SDK Discord soit chargé
+        // Wait for Discord SDK to load
         function waitForDiscordSDK() {
             return new Promise((resolve) => {
-                // Vérifier si on est dans un iframe Discord
                 const isInDiscord = window.self !== window.top;
-                log(`Dans iframe: ${isInDiscord}`, isInDiscord ? '✅' : '❌');
+                log(`Discord iframe detected: ${isInDiscord}`, isInDiscord ? '✅' : '🔍');
                 
                 if (!isInDiscord) {
-                    log('Pas dans Discord - Mode test', '❌');
+                    log('Running in browser test mode', '🧪');
                     resolve();
                     return;
                 }
                 
                 if (window.DiscordSDK) {
-                    log('SDK Discord déjà chargé', '✅');
+                    log('Discord SDK already loaded', '✅');
                     resolve();
-                } else {
-                    log('Attente du SDK...', '⏳');
-                    
-                    // Écouter l'événement de chargement du SDK
-                    window.addEventListener('discord-sdk-loaded', () => {
-                        log('SDK chargé via event', '✅');
-                        resolve();
-                    }, { once: true });
-                    
-                    // Fallback: polling
-                    let attempts = 0;
-                    const maxAttempts = 50;
-                    
-                    const checkInterval = setInterval(() => {
-                        attempts++;
-                        if (window.DiscordSDK) {
-                            log(`SDK chargé (${attempts * 100}ms)`, '✅');
-                            clearInterval(checkInterval);
-                            resolve();
-                        } else if (attempts >= maxAttempts) {
-                            log('Timeout SDK (5s)', '❌');
-                            clearInterval(checkInterval);
-                            resolve();
-                        }
-                    }, 100);
+                    return;
                 }
+
+                log('Waiting for Discord SDK...', '⏳');
+                
+                // Listen for SDK load event
+                const onSdkLoaded = () => {
+                    log('Discord SDK loaded via event', '✅');
+                    resolve();
+                };
+                
+                window.addEventListener('discord-sdk-loaded', onSdkLoaded, { once: true });
+                
+                // Fallback polling (5s timeout)
+                let attempts = 0;
+                const maxAttempts = 50;
+                const checkInterval = setInterval(() => {
+                    attempts++;
+                    if (window.DiscordSDK) {
+                        clearInterval(checkInterval);
+                        resolve();
+                        return;
+                    }
+                    if (attempts >= maxAttempts) {
+                        log('SDK timeout (5s)', '⚠️');
+                        clearInterval(checkInterval);
+                        resolve();
+                    }
+                }, 100);
             });
         }
 
-        // Initialiser le jeu
+        // Game initialization
         (async () => {
             await waitForDiscordSDK();
             await initStorage();
             await initUser();
+            
+            // Initial draw
             placeFood();
-            drawStatic(); // Dessiner l'état initial
+            drawStatic();
+            
+            // Start game loop
             gameLoop = setInterval(drawGame, 100);
+            
+            // Wire up restart button
+            restartBtn.addEventListener('click', restartGame);
+            
+            log('Snake game initialized', '🚀');
         })();
     </script>
 </body>
 </html>
+
