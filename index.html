@@ -273,8 +273,17 @@
         </div>
     </div>
 
-    <!-- Discord Embedded SDK -->
-    <script src="https://discord.com/api/v10/embedded-sdk.js"></script>
+    <!-- Discord Embedded SDK depuis unpkg CDN -->
+    <script type="module">
+        // Importer le SDK Discord
+        import { DiscordSDK } from 'https://unpkg.com/@discord/embedded-app-sdk@2.4.0/output/index.mjs';
+        
+        // Exposer DiscordSDK globalement
+        window.DiscordSDK = DiscordSDK;
+        
+        // Déclencher un événement quand le SDK est prêt
+        window.dispatchEvent(new Event('discord-sdk-loaded'));
+    </script>
     
     <script>
         const canvas = document.getElementById('gameCanvas');
@@ -286,6 +295,7 @@
         const newRecordMsg = document.getElementById('newRecordMsg');
         const userInfoDiv = document.getElementById('userInfo');
         const leaderboardList = document.getElementById('leaderboardList');
+        const debugLog = document.getElementById('debugLog');
 
         const gridSize = 20;
         const tileCount = canvas.width / gridSize;
@@ -298,6 +308,16 @@
         let gameLoop;
         let isPaused = false;
         let currentUser = null;
+
+        // Fonction pour logger dans l'interface
+        function log(message, emoji = '📝') {
+            console.log(message);
+            const logEntry = document.createElement('div');
+            logEntry.textContent = `${emoji} ${message}`;
+            logEntry.style.marginBottom = '3px';
+            debugLog.appendChild(logEntry);
+            debugLog.scrollTop = debugLog.scrollHeight;
+        }
 
         // Fonction pour initialiser le stockage persistant
         async function initStorage() {
@@ -316,39 +336,43 @@
         // Initialiser l'utilisateur Discord
         async function initUser() {
             try {
-                // Vérifier si le SDK Discord est disponible
                 if (!window.DiscordSDK) {
-                    console.log('SDK Discord non disponible - Mode test activé');
+                    log('SDK non disponible', '❌');
                     throw new Error('SDK non disponible');
                 }
 
-                // Initialiser le SDK Discord
+                log('Init SDK...', '⏳');
                 const discordSdk = new window.DiscordSDK('1373200027291488386');
+                
+                log('Ready...', '⏳');
                 await discordSdk.ready();
                 
-                // Authentifier l'utilisateur
-                const { user } = await discordSdk.commands.authenticate({
+                log('Auth...', '⏳');
+                const auth = await discordSdk.commands.authenticate({
                     access_token: true,
                 });
 
+                log(`Auth OK: ${auth.user.username}`, '✅');
+
                 currentUser = {
-                    id: user.id,
-                    username: user.username,
-                    avatar: user.avatar
+                    id: auth.user.id,
+                    username: auth.user.username,
+                    avatar: auth.user.avatar
                 };
 
                 userInfoDiv.innerHTML = `👤 ${currentUser.username}`;
+                debugLog.style.display = 'none'; // Cacher les logs si succès
                 await loadPersonalBest();
                 await loadLeaderboard();
             } catch (error) {
-                console.log('Mode test activé:', error.message);
-                // Fallback pour le développement hors Discord
+                log(`Erreur: ${error.message}`, '❌');
+                
                 currentUser = {
                     id: 'user_' + Math.random().toString(36).substr(2, 9),
                     username: 'Joueur' + Math.floor(Math.random() * 1000),
                     avatar: null
                 };
-                userInfoDiv.innerHTML = `👤 ${currentUser.username} <span style="opacity: 0.6">(Mode test)</span>`;
+                userInfoDiv.innerHTML = `👤 ${currentUser.username} <span style="opacity: 0.6; font-size: 0.8em;">(Mode test)</span>`;
                 await loadPersonalBest();
                 await loadLeaderboard();
             }
@@ -645,21 +669,44 @@
         // Attendre que le SDK Discord soit chargé
         function waitForDiscordSDK() {
             return new Promise((resolve) => {
+                // Vérifier si on est dans un iframe Discord
+                const isInDiscord = window.self !== window.top;
+                log(`Dans iframe: ${isInDiscord}`, isInDiscord ? '✅' : '❌');
+                
+                if (!isInDiscord) {
+                    log('Pas dans Discord - Mode test', '❌');
+                    resolve();
+                    return;
+                }
+                
                 if (window.DiscordSDK) {
+                    log('SDK Discord déjà chargé', '✅');
                     resolve();
                 } else {
+                    log('Attente du SDK...', '⏳');
+                    
+                    // Écouter l'événement de chargement du SDK
+                    window.addEventListener('discord-sdk-loaded', () => {
+                        log('SDK chargé via event', '✅');
+                        resolve();
+                    }, { once: true });
+                    
+                    // Fallback: polling
+                    let attempts = 0;
+                    const maxAttempts = 50;
+                    
                     const checkInterval = setInterval(() => {
+                        attempts++;
                         if (window.DiscordSDK) {
+                            log(`SDK chargé (${attempts * 100}ms)`, '✅');
+                            clearInterval(checkInterval);
+                            resolve();
+                        } else if (attempts >= maxAttempts) {
+                            log('Timeout SDK (5s)', '❌');
                             clearInterval(checkInterval);
                             resolve();
                         }
                     }, 100);
-                    
-                    // Timeout après 5 secondes
-                    setTimeout(() => {
-                        clearInterval(checkInterval);
-                        resolve();
-                    }, 5000);
                 }
             });
         }
