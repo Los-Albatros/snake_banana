@@ -13,9 +13,9 @@
 
         body {
             font-family: 'Segoe UI', system-ui, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
             min-height: 100vh;
-            color: white;
+            color: #4a3c28;
             overflow-x: hidden;
         }
 
@@ -32,16 +32,19 @@
 
         h1 {
             font-size: 2.5em;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
             margin-bottom: 10px;
+            color: #4a3c28;
         }
 
         .discord-user {
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.3);
             padding: 10px 20px;
             border-radius: 10px;
             display: inline-block;
             margin-bottom: 20px;
+            color: #4a3c28;
+            font-weight: 600;
         }
 
         .main-content {
@@ -58,11 +61,11 @@
         }
 
         .game-wrapper {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.25);
             padding: 20px;
             border-radius: 20px;
             backdrop-filter: blur(10px);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 8px 32px rgba(74, 60, 40, 0.3);
         }
 
         .game-info {
@@ -73,15 +76,16 @@
         }
 
         .score, .personal-best {
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 223, 0, 0.3);
             padding: 10px 20px;
             border-radius: 10px;
+            font-weight: 600;
         }
 
         canvas {
-            border: 4px solid rgba(255, 255, 255, 0.5);
+            border: 4px solid rgba(255, 223, 0, 0.5);
             border-radius: 10px;
-            background: #1a1a2e;
+            background: #2a2416;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
             display: block;
             margin: 0 auto;
@@ -93,6 +97,7 @@
             font-size: 0.9em;
             opacity: 0.8;
             text-align: center;
+            color: #4a3c28;
         }
 
         .leaderboard-section {
@@ -101,11 +106,11 @@
         }
 
         .leaderboard {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.25);
             padding: 20px;
             border-radius: 20px;
             backdrop-filter: blur(10px);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 8px 32px rgba(74, 60, 40, 0.3);
             max-height: 600px;
             overflow-y: auto;
         }
@@ -114,10 +119,11 @@
             text-align: center;
             margin-bottom: 20px;
             font-size: 1.8em;
+            color: #4a3c28;
         }
 
         .leaderboard-item {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.2);
             padding: 15px;
             border-radius: 10px;
             margin-bottom: 10px;
@@ -129,7 +135,7 @@
 
         .leaderboard-item:hover {
             transform: translateX(5px);
-            background: rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.3);
         }
 
         .rank {
@@ -139,7 +145,7 @@
             text-align: center;
         }
 
-        .rank-1 { color: #FFD700; }
+        .rank-1 { color: #FFD700; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
         .rank-2 { color: #C0C0C0; }
         .rank-3 { color: #CD7F32; }
 
@@ -151,17 +157,18 @@
             font-weight: bold;
             font-size: 1.1em;
             margin-bottom: 5px;
+            color: #4a3c28;
         }
 
         .player-score {
             font-size: 1.3em;
-            color: #4ecdc4;
+            color: #e67e22;
             font-weight: bold;
         }
 
         .current-player {
-            border: 2px solid #4ecdc4;
-            box-shadow: 0 0 20px rgba(78, 205, 196, 0.3);
+            border: 2px solid #f39c12;
+            box-shadow: 0 0 20px rgba(243, 156, 18, 0.4);
         }
 
         .game-over {
@@ -178,21 +185,22 @@
         }
 
         .game-over-content {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
             padding: 40px;
             border-radius: 20px;
             text-align: center;
             max-width: 400px;
+            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
         }
 
         .game-over h2 {
             font-size: 2em;
             margin-bottom: 20px;
-            color: #ff6b6b;
+            color: #c0392b;
         }
 
         .btn {
-            background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
             color: white;
             border: none;
             padding: 15px 40px;
@@ -201,6 +209,8 @@
             cursor: pointer;
             margin-top: 20px;
             transition: transform 0.2s;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(243, 156, 18, 0.3);
         }
 
         .btn:hover {
@@ -215,13 +225,27 @@
             text-align: center;
             padding: 40px;
             font-size: 1.2em;
+            color: #4a3c28;
+        }
+
+        #debugLog {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 0.8em;
+            max-height: 150px;
+            overflow-y: auto;
+            margin-top: 10px;
+            display: inline-block;
+            max-width: 600px;
+            color: #f6d365;
         }
 
         @media (max-width: 768px) {
             .main-content {
                 flex-direction: column;
             }
-            
+
             .leaderboard-section {
                 order: 2;
             }
@@ -231,11 +255,11 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🐍 Snake Game</h1>
+            <h1>🍌 Banana Snake 🐍</h1>
             <div class="discord-user" id="userInfo">
                 <div class="loading">Connecting to Discord...</div>
             </div>
-            <div id="debugLog" style="background: rgba(0,0,0,0.5); padding: 10px; border-radius: 5px; font-size: 0.8em; max-height: 150px; overflow-y: auto; margin-top: 10px; display: inline-block; max-width: 600px;"></div>
+            <div id="debugLog"></div>
         </div>
 
         <div class="main-content">
@@ -266,28 +290,17 @@
     <div class="game-over" id="gameOver">
         <div class="game-over-content">
             <h2>Game Over!</h2>
-            <p style="font-size: 1.5em; margin: 20px 0;">Score: <span id="finalScore">0</span></p>
-            <p id="newRecordMsg" style="font-size: 1.2em; color: #FFD700; display: none; margin-bottom: 10px;">
+            <p style="font-size: 1.5em; margin: 20px 0; color: #4a3c28;">Score: <span id="finalScore">0</span></p>
+            <p id="newRecordMsg" style="font-size: 1.2em; color: #FFD700; display: none; margin-bottom: 10px; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);">
                 🎉 New personal best!
             </p>
             <button class="btn" id="restartBtn">Play Again</button>
         </div>
     </div>
 
-    <!-- Discord Embedded SDK from unpkg CDN -->
-    <script type="module">
-        // Import Discord SDK
-        import { DiscordSDK } from 'https://unpkg.com/@discord/embedded-app-sdk@2.4.0/output/index.mjs';
-        
-        // Expose DiscordSDK globally
-        window.DiscordSDK = DiscordSDK;
-        
-        // Trigger event when SDK is ready
-        window.dispatchEvent(new Event('discord-sdk-loaded'));
-    </script>
-    
+    <script src="https://cdn.jsdelivr.net/npm/@discord/embedded-app-sdk@1.2.0/output/discord.js"></script>
+
     <script>
-        // Game elements and DOM references
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const scoreElement = document.getElementById('score');
@@ -300,11 +313,9 @@
         const debugLog = document.getElementById('debugLog');
         const restartBtn = document.getElementById('restartBtn');
 
-        // Game constants
         const gridSize = 20;
         const tileCount = canvas.width / gridSize;
 
-        // Game state
         let snake = [{ x: 10, y: 10 }];
         let velocity = { x: 0, y: 0 };
         let food = { x: 15, y: 15 };
@@ -315,12 +326,10 @@
         let currentUser = null;
         let discordSdk = null;
 
-        // Helper to get safe storage reference (Discord storage or localStorage fallback)
         function getStorage() {
             return window.storage || null;
         }
 
-        // Log messages to on-screen debug panel
         function log(message, emoji = '📝') {
             console.log(message);
             const logEntry = document.createElement('div');
@@ -330,7 +339,6 @@
             debugLog.scrollTop = debugLog.scrollHeight;
         }
 
-        // Initialize persistent storage check
         async function initStorage() {
             try {
                 const storage = getStorage();
@@ -338,7 +346,7 @@
                     log('Discord persistent storage available', '💾');
                     return true;
                 }
-                log('Using localStorage fallback (test mode)', '💾');
+                log('Using localStorage fallback', '💾');
                 return false;
             } catch (error) {
                 console.error('Storage check failed:', error);
@@ -346,50 +354,50 @@
             }
         }
 
-        // Initialize Discord user and SDK
         async function initUser() {
             try {
-                if (!window.DiscordSDK) {
+                if (typeof DiscordSDK === 'undefined') {
                     log('Discord SDK not available', '❌');
                     createFallbackUser();
                     return;
                 }
 
                 log('Initializing Discord SDK...', '⏳');
-                discordSdk = new window.DiscordSDK('1373200027291488386');
+                discordSdk = new DiscordSDK('1373200027291488386');
+                
                 await discordSdk.ready();
                 log('Discord SDK ready', '✅');
 
-                // TODO: Add proper OAuth authentication before these calls
-                // const auth = await discordSdk.commands.authenticate({...});
-                
-                log('Fetching instance info...', '⏳');
-                const instanceId = discordSdk.instanceId;
-                const channelId = discordSdk.channelId;
-                const guildId = discordSdk.guildId;
-                log(`Instance: ${instanceId?.slice(-8)} | Channel: ${channelId} | Guild: ${guildId}`, '🔍');
+                const { code } = await discordSdk.commands.authorize({
+                    client_id: '1373200027291488386',
+                    response_type: 'code',
+                    state: '',
+                    prompt: 'none',
+                    scope: ['identify', 'guilds']
+                });
 
-                // Try to get participants (will fail without auth - fallback handles this)
-                try {
-                    const participants = await discordSdk.commands.GetEmbeddedInstanceConnectedParticipants({});
-                    if (participants.participants?.length > 0) {
-                        const participant = participants.participants[0];
-                        currentUser = {
-                            id: participant.id,
-                            username: participant.username || `User${participant.id.slice(-4)}`,
-                            avatar: participant.avatar
-                        };
-                        log(`User: ${currentUser.username}`, '✅');
-                    } else {
-                        createFallbackUser();
-                    }
-                } catch (authError) {
-                    log(`Auth error (normal without OAuth): ${authError.message}`, '⚠️');
+                const response = await fetch('/.proxy/api/token', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code })
+                });
+
+                const { access_token } = await response.json();
+                const auth = await discordSdk.commands.authenticate({ access_token });
+
+                if (auth.user) {
+                    currentUser = {
+                        id: auth.user.id,
+                        username: auth.user.username,
+                        avatar: auth.user.avatar
+                    };
+                    log(`Authenticated: ${currentUser.username}`, '✅');
+                } else {
                     createFallbackUser();
                 }
 
             } catch (error) {
-                log(`SDK init failed: ${error.message}`, '❌');
+                log(`Auth failed: ${error.message}`, '⚠️');
                 createFallbackUser();
             }
 
@@ -402,7 +410,6 @@
                 log(`Using fallback user: ${currentUser.username}`, '👤');
             }
 
-            // Update UI once user is set
             if (currentUser) {
                 userInfoDiv.innerHTML = `👤 ${currentUser.username}`;
                 loadPersonalBest();
@@ -410,7 +417,6 @@
             }
         }
 
-        // Load personal best score from storage
         async function loadPersonalBest() {
             try {
                 const storage = getStorage();
@@ -431,7 +437,6 @@
             }
         }
 
-        // Save new personal best score
         async function saveScore(newScore) {
             if (newScore <= personalBest) return;
 
@@ -444,17 +449,16 @@
                     localStorage.setItem(`snake_score_${currentUser.id}`, newScore.toString());
                     localStorage.setItem(`snake_user_${currentUser.id}`, currentUser.username);
                 }
-                
+
                 personalBest = newScore;
                 personalBestElement.textContent = personalBest;
-                loadLeaderboard(); // Refresh leaderboard
+                loadLeaderboard();
                 log(`New personal best: ${newScore}`, '🏆');
             } catch (error) {
                 console.error('Score save failed:', error);
             }
         }
 
-        // Load leaderboard from storage
         async function loadLeaderboard() {
             try {
                 const storage = getStorage();
@@ -468,19 +472,16 @@
                                 const scoreResult = await storage.get(key);
                                 const userId = key.replace('score:', '');
                                 const userResult = await storage.get(`user:${userId}`);
-                                
+
                                 scores.push({
                                     userId,
                                     username: userResult?.value || 'Player',
                                     score: parseInt(scoreResult?.value) || 0
                                 });
-                            } catch (e) {
-                                // Skip invalid entries
-                            }
+                            } catch (e) {}
                         }
                     }
                 } else {
-                    // localStorage fallback
                     for (let i = 0; i < localStorage.length; i++) {
                         const key = localStorage.key(i);
                         if (key?.startsWith('snake_score_')) {
@@ -495,7 +496,6 @@
                     }
                 }
 
-                // Sort by score descending, limit to top 10
                 scores.sort((a, b) => b.score - a.score);
                 scores = scores.slice(0, 10);
                 displayLeaderboard(scores);
@@ -505,7 +505,6 @@
             }
         }
 
-        // Display leaderboard in UI
         function displayLeaderboard(scores) {
             if (scores.length === 0) {
                 leaderboardList.innerHTML = '<p style="text-align: center; opacity: 0.7;">No scores yet</p>';
@@ -517,7 +516,7 @@
                 const rank = index + 1;
                 const isCurrentUser = player.userId === currentUser?.id;
                 const rankClass = rank <= 3 ? `rank-${rank}` : '';
-                
+
                 html += `
                     <div class="leaderboard-item ${isCurrentUser ? 'current-player' : ''}">
                         <div class="rank ${rankClass}">#${rank}</div>
@@ -531,32 +530,27 @@
             leaderboardList.innerHTML = html;
         }
 
-        // Main game update loop
         function drawGame() {
             if (isPaused) {
                 drawStatic();
                 return;
             }
 
-            // Skip if no movement direction set
             if (velocity.x === 0 && velocity.y === 0) {
                 drawStatic();
                 return;
             }
 
-            // Calculate new head position
-            const head = { 
-                x: snake[0].x + velocity.x, 
-                y: snake[0].y + velocity.y 
+            const head = {
+                x: snake[0].x + velocity.x,
+                y: snake[0].y + velocity.y
             };
 
-            // Wrap around screen edges
             if (head.x < 0) head.x = tileCount - 1;
             if (head.x >= tileCount) head.x = 0;
             if (head.y < 0) head.y = tileCount - 1;
             if (head.y >= tileCount) head.y = 0;
 
-            // Check self-collision
             for (let segment of snake) {
                 if (head.x === segment.x && head.y === segment.y) {
                     endGame();
@@ -564,10 +558,8 @@
                 }
             }
 
-            // Update snake position
             snake.unshift(head);
 
-            // Check food collision
             if (head.x === food.x && head.y === food.y) {
                 score++;
                 scoreElement.textContent = score;
@@ -579,51 +571,42 @@
             drawStatic();
         }
 
-        // Draw static game elements (background, grid, food, snake)
         function drawStatic() {
-            // Clear canvas with dark background
-            ctx.fillStyle = '#1a1a2e';
+            ctx.fillStyle = '#2a2416';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Draw grid lines
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.strokeStyle = 'rgba(246, 211, 101, 0.1)';
             ctx.lineWidth = 1;
             for (let i = 0; i < tileCount; i++) {
-                // Vertical lines
                 ctx.beginPath();
                 ctx.moveTo(i * gridSize, 0);
                 ctx.lineTo(i * gridSize, canvas.height);
                 ctx.stroke();
-                
-                // Horizontal lines
+
                 ctx.beginPath();
                 ctx.moveTo(0, i * gridSize);
                 ctx.lineTo(canvas.width, i * gridSize);
                 ctx.stroke();
             }
 
-            // Draw food with glow effect
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = '#ff6b6b';
-            ctx.fillStyle = '#ff6b6b';
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = '#FFD700';
+            ctx.fillStyle = '#FFD700';
             ctx.fillRect(food.x * gridSize, food.y * gridSize, gridSize - 2, gridSize - 2);
             ctx.shadowBlur = 0;
 
-            // Draw snake segments with gradient
             snake.forEach((segment, index) => {
                 const gradient = ctx.createLinearGradient(
                     segment.x * gridSize, segment.y * gridSize,
                     (segment.x + 1) * gridSize, (segment.y + 1) * gridSize
                 );
-                
+
                 if (index === 0) {
-                    // Head: teal gradient
-                    gradient.addColorStop(0, '#4ecdc4');
-                    gradient.addColorStop(1, '#44a08d');
+                    gradient.addColorStop(0, '#f39c12');
+                    gradient.addColorStop(1, '#e67e22');
                 } else {
-                    // Body: purple gradient
-                    gradient.addColorStop(0, '#667eea');
-                    gradient.addColorStop(1, '#764ba2');
+                    gradient.addColorStop(0, '#f6d365');
+                    gradient.addColorStop(1, '#fda085');
                 }
 
                 ctx.fillStyle = gradient;
@@ -636,12 +619,10 @@
             });
         }
 
-        // Place food at random safe position
         function placeFood() {
             food.x = Math.floor(Math.random() * tileCount);
             food.y = Math.floor(Math.random() * tileCount);
 
-            // Ensure food doesn't spawn on snake
             for (let segment of snake) {
                 if (food.x === segment.x && food.y === segment.y) {
                     placeFood();
@@ -650,7 +631,6 @@
             }
         }
 
-        // End game and show game over screen
         async function endGame() {
             if (gameLoop) {
                 clearInterval(gameLoop);
@@ -658,7 +638,7 @@
             }
 
             finalScoreElement.textContent = score;
-            
+
             if (score > personalBest) {
                 newRecordMsg.style.display = 'block';
                 await saveScore(score);
@@ -669,34 +649,27 @@
             gameOverDiv.style.display = 'flex';
         }
 
-        // Properly restart the game with clean state
         function restartGame() {
-            // Stop existing game loop
             if (gameLoop) {
                 clearInterval(gameLoop);
                 gameLoop = null;
             }
-            
-            // Reset all game state
+
             snake = [{ x: 10, y: 10 }];
             velocity = { x: 0, y: 0 };
             score = 0;
             isPaused = false;
-            
-            // Update UI
+
             scoreElement.textContent = score;
             gameOverDiv.style.display = 'none';
-            
-            // Place initial food and draw
+
             placeFood();
             drawStatic();
-            
-            // Start new game loop
+
             gameLoop = setInterval(drawGame, 100);
             log('Game restarted', '🔄');
         }
 
-        // Keyboard input handling
         document.addEventListener('keydown', (e) => {
             switch(e.key) {
                 case 'ArrowUp':
@@ -723,72 +696,19 @@
             }
         });
 
-        // Wait for Discord SDK to load
-        function waitForDiscordSDK() {
-            return new Promise((resolve) => {
-                const isInDiscord = window.self !== window.top;
-                log(`Discord iframe detected: ${isInDiscord}`, isInDiscord ? '✅' : '🔍');
-                
-                if (!isInDiscord) {
-                    log('Running in browser test mode', '🧪');
-                    resolve();
-                    return;
-                }
-                
-                if (window.DiscordSDK) {
-                    log('Discord SDK already loaded', '✅');
-                    resolve();
-                    return;
-                }
-
-                log('Waiting for Discord SDK...', '⏳');
-                
-                // Listen for SDK load event
-                const onSdkLoaded = () => {
-                    log('Discord SDK loaded via event', '✅');
-                    resolve();
-                };
-                
-                window.addEventListener('discord-sdk-loaded', onSdkLoaded, { once: true });
-                
-                // Fallback polling (5s timeout)
-                let attempts = 0;
-                const maxAttempts = 50;
-                const checkInterval = setInterval(() => {
-                    attempts++;
-                    if (window.DiscordSDK) {
-                        clearInterval(checkInterval);
-                        resolve();
-                        return;
-                    }
-                    if (attempts >= maxAttempts) {
-                        log('SDK timeout (5s)', '⚠️');
-                        clearInterval(checkInterval);
-                        resolve();
-                    }
-                }, 100);
-            });
-        }
-
-        // Game initialization
         (async () => {
-            await waitForDiscordSDK();
             await initStorage();
             await initUser();
-            
-            // Initial draw
+
             placeFood();
             drawStatic();
-            
-            // Start game loop
+
             gameLoop = setInterval(drawGame, 100);
-            
-            // Wire up restart button
+
             restartBtn.addEventListener('click', restartGame);
-            
-            log('Snake game initialized', '🚀');
+
+            log('Banana Snake initialized', '🚀');
         })();
     </script>
 </body>
 </html>
-
