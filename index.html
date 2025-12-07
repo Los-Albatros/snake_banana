@@ -298,7 +298,11 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@discord/embedded-app-sdk@1.2.0/output/discord.js"></script>
+    <script type="module">
+        import { DiscordSDK } from 'https://unpkg.com/@discord/embedded-app-sdk@2.4.0/output/index.mjs';
+        window.DiscordSDK = DiscordSDK;
+        window.dispatchEvent(new Event('discord-sdk-loaded'));
+    </script>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
@@ -356,48 +360,60 @@
 
         async function initUser() {
             try {
-                if (typeof DiscordSDK === 'undefined') {
+                if (!window.DiscordSDK) {
                     log('Discord SDK not available', '❌');
                     createFallbackUser();
                     return;
                 }
 
                 log('Initializing Discord SDK...', '⏳');
-                discordSdk = new DiscordSDK('1373200027291488386');
-                
+                discordSdk = new window.DiscordSDK('1373200027291488386');
                 await discordSdk.ready();
                 log('Discord SDK ready', '✅');
 
-                const { code } = await discordSdk.commands.authorize({
-                    client_id: '1373200027291488386',
-                    response_type: 'code',
-                    state: '',
-                    prompt: 'none',
-                    scope: ['identify', 'guilds']
-                });
+                log('Getting instance participants...', '⏳');
+                
+                // Méthode simplifiée pour obtenir l'utilisateur
+                const channelId = discordSdk.channelId;
+                const guildId = discordSdk.guildId;
+                const instanceId = discordSdk.instanceId;
+                
+                log(`Channel: ${channelId} | Guild: ${guildId}`, '🔍');
 
-                const response = await fetch('/.proxy/api/token', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ code })
-                });
-
-                const { access_token } = await response.json();
-                const auth = await discordSdk.commands.authenticate({ access_token });
-
-                if (auth.user) {
-                    currentUser = {
-                        id: auth.user.id,
-                        username: auth.user.username,
-                        avatar: auth.user.avatar
-                    };
-                    log(`Authenticated: ${currentUser.username}`, '✅');
-                } else {
+                // Tenter d'obtenir les informations utilisateur via l'instance
+                try {
+                    // Dans l'embedded app SDK v2, on utilise getInstanceConnectedParticipants
+                    const response = await discordSdk.commands.getInstanceConnectedParticipants();
+                    
+                    if (response && response.participants && response.participants.length > 0) {
+                        const user = response.participants[0];
+                        currentUser = {
+                            id: user.id,
+                            username: user.username || user.global_name || `User${user.id.slice(-4)}`,
+                            avatar: user.avatar
+                        };
+                        log(`User found: ${currentUser.username}`, '✅');
+                    } else {
+                        log('No participants found, trying alternative...', '⚠️');
+                        // Essayer d'obtenir l'utilisateur via le contexte
+                        if (discordSdk.platform) {
+                            currentUser = {
+                                id: instanceId || 'instance_user',
+                                username: `Player${Math.floor(Math.random() * 1000)}`,
+                                avatar: null
+                            };
+                            log(`Using instance user: ${currentUser.username}`, '👤');
+                        } else {
+                            createFallbackUser();
+                        }
+                    }
+                } catch (participantError) {
+                    log(`Participant fetch error: ${participantError.message}`, '⚠️');
                     createFallbackUser();
                 }
 
             } catch (error) {
-                log(`Auth failed: ${error.message}`, '⚠️');
+                log(`SDK init failed: ${error.message}`, '❌');
                 createFallbackUser();
             }
 
@@ -696,7 +712,52 @@
             }
         });
 
+        function waitForDiscordSDK() {
+            return new Promise((resolve) => {
+                const isInDiscord = window.self !== window.top;
+                log(`Discord iframe detected: ${isInDiscord}`, isInDiscord ? '✅' : '🔍');
+
+                if (!isInDiscord) {
+                    log('Running in browser test mode', '🧪');
+                    resolve();
+                    return;
+                }
+
+                if (window.DiscordSDK) {
+                    log('Discord SDK already loaded', '✅');
+                    resolve();
+                    return;
+                }
+
+                log('Waiting for Discord SDK...', '⏳');
+
+                const onSdkLoaded = () => {
+                    log('Discord SDK loaded via event', '✅');
+                    resolve();
+                };
+
+                window.addEventListener('discord-sdk-loaded', onSdkLoaded, { once: true });
+
+                let attempts = 0;
+                const maxAttempts = 50;
+                const checkInterval = setInterval(() => {
+                    attempts++;
+                    if (window.DiscordSDK) {
+                        clearInterval(checkInterval);
+                        resolve();
+                        return;
+                    }
+                    if (attempts >= maxAttempts) {
+                        log('SDK timeout (5s)', '⚠️');
+                        clearInterval(checkInterval);
+                        resolve();
+                    }
+                }, 100);
+            });
+        }
+
         (async () => {
+            await waitForDiscordSDK();
             await initStorage();
             await initUser();
 
