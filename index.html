@@ -371,45 +371,68 @@
                 await discordSdk.ready();
                 log('Discord SDK ready', '✅');
 
-                log('Getting instance participants...', '⏳');
-                
-                // Méthode simplifiée pour obtenir l'utilisateur
                 const channelId = discordSdk.channelId;
                 const guildId = discordSdk.guildId;
                 const instanceId = discordSdk.instanceId;
                 
                 log(`Channel: ${channelId} | Guild: ${guildId}`, '🔍');
 
-                // Tenter d'obtenir les informations utilisateur via l'instance
+                // Étape 1: Autorisation OAuth
+                log('Starting OAuth flow...', '⏳');
                 try {
-                    // Dans l'embedded app SDK v2, on utilise getInstanceConnectedParticipants
-                    const response = await discordSdk.commands.getInstanceConnectedParticipants();
-                    
-                    if (response && response.participants && response.participants.length > 0) {
-                        const user = response.participants[0];
+                    const { code } = await discordSdk.commands.authorize({
+                        client_id: '1373200027291488386',
+                        response_type: 'code',
+                        state: '',
+                        prompt: 'none',
+                        scope: [
+                            'identify',
+                            'guilds',
+                            'guilds.members.read'
+                        ]
+                    });
+                    log('Authorization code received', '✅');
+
+                    // Étape 2: Authentification
+                    log('Authenticating...', '⏳');
+                    const auth = await discordSdk.commands.authenticate({
+                        access_token: code
+                    });
+
+                    if (auth && auth.user) {
                         currentUser = {
-                            id: user.id,
-                            username: user.username || user.global_name || `User${user.id.slice(-4)}`,
-                            avatar: user.avatar
+                            id: auth.user.id,
+                            username: auth.user.username || auth.user.global_name || `User${auth.user.id.slice(-4)}`,
+                            avatar: auth.user.avatar
                         };
-                        log(`User found: ${currentUser.username}`, '✅');
+                        log(`Authenticated: ${currentUser.username}`, '✅');
                     } else {
-                        log('No participants found, trying alternative...', '⚠️');
-                        // Essayer d'obtenir l'utilisateur via le contexte
-                        if (discordSdk.platform) {
+                        log('No user in auth response', '⚠️');
+                        createFallbackUser();
+                    }
+                } catch (authError) {
+                    log(`Auth failed: ${authError.message}`, '⚠️');
+                    
+                    // Fallback: essayer getInstanceConnectedParticipants sans auth
+                    try {
+                        log('Trying getInstanceConnectedParticipants...', '⏳');
+                        const response = await discordSdk.commands.getInstanceConnectedParticipants();
+                        
+                        if (response && response.participants && response.participants.length > 0) {
+                            const user = response.participants[0];
                             currentUser = {
-                                id: instanceId || 'instance_user',
-                                username: `Player${Math.floor(Math.random() * 1000)}`,
-                                avatar: null
+                                id: user.id,
+                                username: user.username || user.global_name || `User${user.id.slice(-4)}`,
+                                avatar: user.avatar
                             };
-                            log(`Using instance user: ${currentUser.username}`, '👤');
+                            log(`User from participants: ${currentUser.username}`, '✅');
                         } else {
                             createFallbackUser();
                         }
+                    } catch (participantError) {
+                        log(`Participant fetch also failed: ${participantError.message}`, '⚠️');
+                        createFallbackUser();
                     }
-                } catch (participantError) {
-                    log(`Participant fetch error: ${participantError.message}`, '⚠️');
-                    createFallbackUser();
                 }
 
             } catch (error) {
