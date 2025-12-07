@@ -228,17 +228,57 @@
             color: #4a3c28;
         }
 
-        #debugLog {
-            background: rgba(0, 0, 0, 0.5);
-            padding: 10px;
-            border-radius: 5px;
-            font-size: 0.8em;
-            max-height: 150px;
-            overflow-y: auto;
-            margin-top: 10px;
-            display: inline-block;
-            max-width: 600px;
-            color: #f6d365;
+        .name-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .name-modal-content {
+            background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 400px;
+            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        .name-modal h2 {
+            font-size: 2em;
+            margin-bottom: 20px;
+            color: #4a3c28;
+        }
+
+        .name-modal p {
+            font-size: 1.1em;
+            margin-bottom: 20px;
+            color: #4a3c28;
+        }
+
+        .name-input {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.2em;
+            border: 3px solid rgba(255, 223, 0, 0.5);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #4a3c28;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .name-input:focus {
+            outline: none;
+            border-color: #f39c12;
+            box-shadow: 0 0 20px rgba(243, 156, 18, 0.4);
         }
 
         @media (max-width: 768px) {
@@ -259,7 +299,6 @@
             <div class="discord-user" id="userInfo">
                 <div class="loading">Connecting to Discord...</div>
             </div>
-            <div id="debugLog"></div>
         </div>
 
         <div class="main-content">
@@ -284,6 +323,15 @@
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <div class="name-modal" id="nameModal">
+        <div class="name-modal-content">
+            <h2>🍌 Welcome to Banana Snake! 🐍</h2>
+            <p>Enter your player name:</p>
+            <input type="text" id="nameInput" class="name-input" placeholder="Your name..." maxlength="20" autocomplete="off">
+            <button class="btn" id="nameSubmitBtn">Start Playing!</button>
         </div>
     </div>
 
@@ -314,8 +362,10 @@
         const newRecordMsg = document.getElementById('newRecordMsg');
         const userInfoDiv = document.getElementById('userInfo');
         const leaderboardList = document.getElementById('leaderboardList');
-        const debugLog = document.getElementById('debugLog');
         const restartBtn = document.getElementById('restartBtn');
+        const nameModal = document.getElementById('nameModal');
+        const nameInput = document.getElementById('nameInput');
+        const nameSubmitBtn = document.getElementById('nameSubmitBtn');
 
         const gridSize = 20;
         const tileCount = canvas.width / gridSize;
@@ -334,23 +384,12 @@
             return window.storage || null;
         }
 
-        function log(message, emoji = '📝') {
-            console.log(message);
-            const logEntry = document.createElement('div');
-            logEntry.textContent = `${emoji} ${message}`;
-            logEntry.style.marginBottom = '3px';
-            debugLog.appendChild(logEntry);
-            debugLog.scrollTop = debugLog.scrollHeight;
-        }
-
         async function initStorage() {
             try {
                 const storage = getStorage();
                 if (storage) {
-                    log('Discord persistent storage available', '💾');
                     return true;
                 }
-                log('Using localStorage fallback', '💾');
                 return false;
             } catch (error) {
                 console.error('Storage check failed:', error);
@@ -361,93 +400,58 @@
         async function initUser() {
             try {
                 if (!window.DiscordSDK) {
-                    log('Discord SDK not available', '❌');
-                    createFallbackUser();
+                    showNameModal();
                     return;
                 }
 
-                log('Initializing Discord SDK...', '⏳');
                 discordSdk = new window.DiscordSDK('1373200027291488386');
                 await discordSdk.ready();
-                log('Discord SDK ready', '✅');
 
-                const channelId = discordSdk.channelId;
-                const guildId = discordSdk.guildId;
                 const instanceId = discordSdk.instanceId;
                 
-                log(`Channel: ${channelId} | Guild: ${guildId}`, '🔍');
-
-                // Méthode simplifiée sans OAuth complet
-                // On utilise directement getInstanceConnectedParticipants après avoir "activé" le SDK
-                try {
-                    log('Getting participants...', '⏳');
-                    
-                    // Astuce: appeler setActivity peut aider à initialiser le contexte
-                    await discordSdk.commands.setActivity({
-                        activity: {
-                            type: 0,
-                            details: 'Playing Banana Snake 🍌',
-                            state: 'In Game'
-                        }
-                    }).catch(() => {
-                        // Ignorer l'erreur si setActivity échoue
-                        log('setActivity skipped', '⚠️');
-                    });
-                    
-                    const response = await discordSdk.commands.getInstanceConnectedParticipants();
-                    
-                    if (response && response.participants && response.participants.length > 0) {
-                        const user = response.participants[0];
-                        currentUser = {
-                            id: user.id,
-                            username: user.username || user.global_name || `User${user.id.slice(-4)}`,
-                            avatar: user.avatar
-                        };
-                        log(`User found: ${currentUser.username}`, '✅');
-                    } else {
-                        log('No participants, using instance ID', '⚠️');
-                        // Utiliser l'instance ID comme identifiant unique
-                        currentUser = {
-                            id: instanceId,
-                            username: `Player_${instanceId.slice(-4)}`,
-                            avatar: null
-                        };
-                        log(`Using instance: ${currentUser.username}`, '👤');
-                    }
-                } catch (participantError) {
-                    log(`Participant error: ${participantError.message}`, '⚠️');
-                    // Dernière solution: utiliser l'instance ID
-                    if (instanceId) {
-                        currentUser = {
-                            id: instanceId,
-                            username: `Player_${instanceId.slice(-4)}`,
-                            avatar: null
-                        };
-                        log(`Using instance ID: ${currentUser.username}`, '👤');
-                    } else {
-                        createFallbackUser();
-                    }
+                // Utiliser l'instance ID comme base
+                if (instanceId) {
+                    currentUser = {
+                        id: instanceId,
+                        username: null, // Sera défini par l'utilisateur
+                        avatar: null
+                    };
+                } else {
+                    currentUser = {
+                        id: 'user_' + Math.random().toString(36).substr(2, 9),
+                        username: null,
+                        avatar: null
+                    };
                 }
 
-            } catch (error) {
-                log(`SDK init failed: ${error.message}`, '❌');
-                createFallbackUser();
-            }
+                // Montrer la modal pour demander le nom
+                showNameModal();
 
-            function createFallbackUser() {
+            } catch (error) {
+                console.error('SDK init failed:', error);
                 currentUser = {
                     id: 'user_' + Math.random().toString(36).substr(2, 9),
-                    username: `Player${Math.floor(Math.random() * 1000)}`,
+                    username: null,
                     avatar: null
                 };
-                log(`Using fallback user: ${currentUser.username}`, '👤');
+                showNameModal();
             }
+        }
 
-            if (currentUser) {
-                userInfoDiv.innerHTML = `👤 ${currentUser.username}`;
-                loadPersonalBest();
-                loadLeaderboard();
+        function showNameModal() {
+            nameModal.style.display = 'flex';
+            nameInput.focus();
+        }
+
+        function setUserName(name) {
+            if (!name || name.trim() === '') {
+                name = `Player${Math.floor(Math.random() * 1000)}`;
             }
+            currentUser.username = name.trim();
+            userInfoDiv.innerHTML = `👤 ${currentUser.username}`;
+            nameModal.style.display = 'none';
+            loadPersonalBest();
+            loadLeaderboard();
         }
 
         async function loadPersonalBest() {
@@ -486,7 +490,6 @@
                 personalBest = newScore;
                 personalBestElement.textContent = personalBest;
                 loadLeaderboard();
-                log(`New personal best: ${newScore}`, '🏆');
             } catch (error) {
                 console.error('Score save failed:', error);
             }
@@ -700,7 +703,6 @@
             drawStatic();
 
             gameLoop = setInterval(drawGame, 100);
-            log('Game restarted', '🔄');
         }
 
         document.addEventListener('keydown', (e) => {
@@ -723,33 +725,32 @@
                     break;
                 case ' ':
                     isPaused = !isPaused;
-                    log(`Game ${isPaused ? 'paused' : 'resumed'}`, isPaused ? '⏸️' : '▶️');
                     e.preventDefault();
                     break;
             }
         });
 
+        // Gestion de la soumission du nom
+        nameSubmitBtn.addEventListener('click', () => {
+            const name = nameInput.value;
+            setUserName(name);
+        });
+
+        nameInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const name = nameInput.value;
+                setUserName(name);
+            }
+        });
+
         function waitForDiscordSDK() {
             return new Promise((resolve) => {
-                const isInDiscord = window.self !== window.top;
-                log(`Discord iframe detected: ${isInDiscord}`, isInDiscord ? '✅' : '🔍');
-
-                if (!isInDiscord) {
-                    log('Running in browser test mode', '🧪');
-                    resolve();
-                    return;
-                }
-
                 if (window.DiscordSDK) {
-                    log('Discord SDK already loaded', '✅');
                     resolve();
                     return;
                 }
-
-                log('Waiting for Discord SDK...', '⏳');
 
                 const onSdkLoaded = () => {
-                    log('Discord SDK loaded via event', '✅');
                     resolve();
                 };
 
@@ -765,7 +766,6 @@
                         return;
                     }
                     if (attempts >= maxAttempts) {
-                        log('SDK timeout (5s)', '⚠️');
                         clearInterval(checkInterval);
                         resolve();
                     }
@@ -784,8 +784,6 @@
             gameLoop = setInterval(drawGame, 100);
 
             restartBtn.addEventListener('click', restartGame);
-
-            log('Banana Snake initialized', '🚀');
         })();
     </script>
 </body>
