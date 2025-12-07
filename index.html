@@ -377,60 +377,54 @@
                 
                 log(`Channel: ${channelId} | Guild: ${guildId}`, '🔍');
 
-                // Étape 1: Autorisation OAuth
-                log('Starting OAuth flow...', '⏳');
+                // Méthode simplifiée sans OAuth complet
+                // On utilise directement getInstanceConnectedParticipants après avoir "activé" le SDK
                 try {
-                    const { code } = await discordSdk.commands.authorize({
-                        client_id: '1373200027291488386',
-                        response_type: 'code',
-                        state: '',
-                        prompt: 'none',
-                        scope: [
-                            'identify',
-                            'guilds',
-                            'guilds.members.read'
-                        ]
-                    });
-                    log('Authorization code received', '✅');
-
-                    // Étape 2: Authentification
-                    log('Authenticating...', '⏳');
-                    const auth = await discordSdk.commands.authenticate({
-                        access_token: code
-                    });
-
-                    if (auth && auth.user) {
-                        currentUser = {
-                            id: auth.user.id,
-                            username: auth.user.username || auth.user.global_name || `User${auth.user.id.slice(-4)}`,
-                            avatar: auth.user.avatar
-                        };
-                        log(`Authenticated: ${currentUser.username}`, '✅');
-                    } else {
-                        log('No user in auth response', '⚠️');
-                        createFallbackUser();
-                    }
-                } catch (authError) {
-                    log(`Auth failed: ${authError.message}`, '⚠️');
+                    log('Getting participants...', '⏳');
                     
-                    // Fallback: essayer getInstanceConnectedParticipants sans auth
-                    try {
-                        log('Trying getInstanceConnectedParticipants...', '⏳');
-                        const response = await discordSdk.commands.getInstanceConnectedParticipants();
-                        
-                        if (response && response.participants && response.participants.length > 0) {
-                            const user = response.participants[0];
-                            currentUser = {
-                                id: user.id,
-                                username: user.username || user.global_name || `User${user.id.slice(-4)}`,
-                                avatar: user.avatar
-                            };
-                            log(`User from participants: ${currentUser.username}`, '✅');
-                        } else {
-                            createFallbackUser();
+                    // Astuce: appeler setActivity peut aider à initialiser le contexte
+                    await discordSdk.commands.setActivity({
+                        activity: {
+                            type: 0,
+                            details: 'Playing Banana Snake 🍌',
+                            state: 'In Game'
                         }
-                    } catch (participantError) {
-                        log(`Participant fetch also failed: ${participantError.message}`, '⚠️');
+                    }).catch(() => {
+                        // Ignorer l'erreur si setActivity échoue
+                        log('setActivity skipped', '⚠️');
+                    });
+                    
+                    const response = await discordSdk.commands.getInstanceConnectedParticipants();
+                    
+                    if (response && response.participants && response.participants.length > 0) {
+                        const user = response.participants[0];
+                        currentUser = {
+                            id: user.id,
+                            username: user.username || user.global_name || `User${user.id.slice(-4)}`,
+                            avatar: user.avatar
+                        };
+                        log(`User found: ${currentUser.username}`, '✅');
+                    } else {
+                        log('No participants, using instance ID', '⚠️');
+                        // Utiliser l'instance ID comme identifiant unique
+                        currentUser = {
+                            id: instanceId,
+                            username: `Player_${instanceId.slice(-4)}`,
+                            avatar: null
+                        };
+                        log(`Using instance: ${currentUser.username}`, '👤');
+                    }
+                } catch (participantError) {
+                    log(`Participant error: ${participantError.message}`, '⚠️');
+                    // Dernière solution: utiliser l'instance ID
+                    if (instanceId) {
+                        currentUser = {
+                            id: instanceId,
+                            username: `Player_${instanceId.slice(-4)}`,
+                            avatar: null
+                        };
+                        log(`Using instance ID: ${currentUser.username}`, '👤');
+                    } else {
                         createFallbackUser();
                     }
                 }
